@@ -1,24 +1,27 @@
 package main
 
 import (
-"fmt"
- "net"
- "net/http"
- "net/http/fcgi"
+	"fmt"
+	"net"
+	"net/http"
+	"net/http/fcgi"
 )
 
+// This function handles a request, and calls the correct function based on the path
 func ServeHTTP(resp http.ResponseWriter, req *http.Request) {
- resp.Write([]byte("<h1>Hello, 世界</h1>\n<p>Behold my Go web app.</p>"))
+	path = req.URL.Path
+
 }
 
 func main() {
-  fmt.Println("Hello!")
- listener, err := net.Listen("tcp", ":8080")
- if (err != nil) {
-    fmt.Println("Error!")
-    fmt.Println(err)
- }
- srv := http.NewServeMux()
- srv.HandleFunc("/", ServeHTTP)
- fcgi.Serve(listener, srv)
+	// listen for requests
+	fmt.Println("Hello!")
+	listener, err := net.Listen("tcp", "localhost:8080")
+	if err != nil {
+		fmt.Println("Error!")
+		fmt.Println(err)
+	}
+	srv := http.NewServeMux()
+	srv.HandleFunc("/", ServeHTTP)
+	fcgi.Serve(listener, srv)
 }
