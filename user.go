@@ -1,5 +1,7 @@
 package main
 
-type User struct{
-	
+var userStore = make([]User, 0, 5)
+
+type User struct {
+	Entity
 }

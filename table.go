@@ -1,5 +1,6 @@
 package main
 
-type Table {
-	
+var tableStore = make([]Table, 0, 10)
+
+type Table struct {
 }

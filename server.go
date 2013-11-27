@@ -1,86 +1,88 @@
 package main
 
 import (
-  "fmt"
-  "net"
-  "net/http"
-  "net/http/fcgi"
-  "code.google.com/p/gorest"
+	"code.google.com/p/gorest"
+	"fmt"
+	//"github.com/mattn/go-sqlite3"
+	"net"
+	"net/http/fcgi"
 )
 
 func main() {
-  fmt.Println("Hello!")
-  listener, err := net.Listen("tcp", ":8080")
-  if (err != nil) {
-    fmt.Println("Error!")
-    fmt.Println(err)
-  }
-  srv := http.NewServeMux()
-  srv.HandleFunc("/", gorest.handle())
-  fcgi.Serve(listener, srv)
+	fmt.Println("Hello!")
+	listener, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		fmt.Println("Error!")
+		fmt.Println(err)
+	}
+	// srv := http.NewServeMux()
+	// srv.HandleFunc("/", gorest.Handle())
+	fcgi.Serve(listener, gorest.Handle())
 }
 
-type accessToken struct{
-  
+// This function will keep the user data synced with the sqlite DB
+func sync() {
+
 }
 
 //************************Define Service***************************
 
-type AuthService struct{
-  gorest.RestService    `root:"/" consumes:"application/json" produces:"application/json"`
+type DefaultService struct {
+	gorest.RestService `root:"/"`
 
-  authenticate  gorest.EndPoint `method:"POST" path:"/authenticate/" postdata:"authUser" output:"accessToken"`
+	index        gorest.EndPoint `method:"GET" path:"/" output:"srting"`
+	authenticate gorest.EndPoint `method:"POST" path:"/authenticate/" postdata:"authUser" output:"string"`
 }
 
-type PokerService struct{
-  //Service level config
-  gorest.RestService    `root:"/poker/" consumes:"application/json" produces:"application/json"`
+type PokerService struct {
+	//Service level config
+	gorest.RestService `root:"/poker/" consumes:"application/json" produces:"application/json"`
 
-  //End-Point level configs: Field names must be the same as the corresponding method names,
-  // but not-exported (starts with lowercase)
+	//End-Point level configs: Field names must be the same as the corresponding method names,
+	// but not-exported (starts with lowercase)
 
-  tableList     gorest.EndPoint `method:"GET" path:"/table/" output:"[]Table"`
-  tableDetails  gorest.EndPoint `method:"GET" path:"/table/{Id:int}" output:"Table"`
-  playerList    gorest.EndPoint `method:"GET" path:"/player/" output:"[]Player"`
-  playerDetails gorest.EndPoint `method:"GET" path:"/player/{Id:int}" output:"Player"`
-  //playerStats   gorest.EndPoint `method:"GET" path:"/player/{Id:int}/" output:"PlayerStats"`
+	tableList     gorest.EndPoint `method:"GET" path:"/table/" output:"[]Table"`
+	tableDetails  gorest.EndPoint `method:"GET" path:"/table/{Id:int}" output:"Table"`
+	playerList    gorest.EndPoint `method:"GET" path:"/player/" output:"[]Player"`
+	playerCreate  gorest.EndPoint `method:"POST" path:"/player/" postdata:"Player"`
+	playerDetails gorest.EndPoint `method:"GET" path:"/player/{Id:int}" output:"Player"`
+	//playerStats   gorest.EndPoint `method:"GET" path:"/player/{Id:int}/" output:"PlayerStats"`
 }
 
-type UserService struct{
-  gorest.RestService    `root:"/user/" consumes:"application/json" produces:"application/json"`
+type UserService struct {
+	gorest.RestService `root:"/user/" consumes:"application/json" produces:"application/json"`
 
-  userDetails   gorest.EndPoint `method:"GET" path:"/{Id:int}" output:"User"`
-  userCreate    gorest.EndPoint `method:"POST" path:"/" postdata:"User"`
+	userDetails gorest.EndPoint `method:"GET" path:"/{Id:int}" output:"User"`
+	userCreate  gorest.EndPoint `method:"POST" path:"/" postdata:"User"`
+}
+
+func (serv DefaultService) Authenticate() string {
+	fmt.Println(serv)
+	return "Hello!"
 }
 
 //Handler Methods: Method names must be the same as in config, but exported (starts with uppercase)
 
-func(serv PokerService) TableDetails(Id int) (t Table){
-    if table,found:=tableStore[Id];found{
-        t =table
-        return
-    }
-    serv.ResponseBuilder().SetResponseCode(404).Overide(true)  //Overide causes the entity returned by the method to be ignored. Other wise it would send back zeroed object
-    return
+func (serv PokerService) TableDetails(Id int) (t Table) {
+	return tableStore[Id]
+	//serv.ResponseBuilder().SetResponseCode(404).Overide(true) //Overide causes the entity returned by the method to be ignored. Other wise it would send back zeroed object
+	//return
 }
 
-func(serv PokerService) TableList()[]Table{
-    serv.ResponseBuilder().CacheMaxAge(60*60*24) //List cacheable for a day. More work to come on this, Etag, etc
-    return tableStore
+func (serv PokerService) TableList() []Table {
+	serv.ResponseBuilder().CacheMaxAge(60 * 60 * 24) //List cacheable for a day. More work to come on this, Etag, etc
+	return tableStore
 }
 
-func(serv PokerService) PlayerDetails(Id int) (p Player){
-    if player,found:=playerStore[Id];found{
-        p =player
-        return
-    }
-    serv.ResponseBuilder().SetResponseCode(404).Overide(true)  //Overide causes the entity returned by the method to be ignored. Other wise it would send back zeroed object
-    return
+func (serv PokerService) PlayerDetails(Id int) (p Player) {
+	return playerStore[Id]
+	// serv.ResponseBuilder().SetResponseCode(404).Overide(true) //Overide causes the entity returned by the method to be ignored. Other wise it would send back zeroed object
+	// return
 }
 
-func(serv PokerService) PlayerList()[]Player{
-    serv.ResponseBuilder().CacheMaxAge(60*60*24) //List cacheable for a day. More work to come on this, Etag, etc
-    return playerStore
+func (serv PokerService) PlayerList() []Player {
+	serv.ResponseBuilder().CacheMaxAge(60 * 60 * 24) //List cacheable for a day. More work to come on this, Etag, etc
+	return playerStore
 }
 
 // func(serv OrderService) AddItem(i Item){
